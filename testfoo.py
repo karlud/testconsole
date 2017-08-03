@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import code, io, contextlib
+import code, io, contextlib, readline
 
 class TestConsole(code.InteractiveConsole):
   def test(self, output):
