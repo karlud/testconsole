@@ -19,16 +19,30 @@ except ImportError:
     fancyprint = print
 
 
-class TestConsole(code.InteractiveConsole):
-    def test_input(self, lines):
-        # When the student defines a new function, give them feedback.
-        if lines[0].startswith('def '):
-            fancyprint('You just defined a function!')
+# A Tester is a coroutine that accepts (in, out, err, locals) tuples and yields
+# messages to the student.  An (in, out, err, locals) tuple consists of the
+# student's typed input, the interpreter's stdout, the interpreter's stderr,
+# and the interpreter's locals dict.
+def TrivialTester():
+    (i, o, e, l) = yield 'Tester online!'
+    while True:
+        if e:
+            (i, o, e, l) = yield 'Something went a bit off there. Balloon plz?'
+        elif 'balloon' in i[0]:
+            if 'balloon' in l:
+                while True:
+                    (i, o, e, l) = yield 'Yay, I have a balloon!'
+            else:
+                (i, o, e, l) = yield 'No no, I want a balloon variable!'
+        else:
+            (i, o, e, l) = yield 'No balloon, please get me a balloon'
 
-    def test_output(self, output, error):
-        # When the student gets Python to print the magic number, give feedback
-        if output.startswith("17"):
-            fancyprint("*** YOU WIN A THE INTERNET ***")
+
+class TestConsole(code.InteractiveConsole):
+    def __init__(self, *args, **kwargs):
+        super(TestConsole, self).__init__(*args, **kwargs)
+        self.tester = TrivialTester()
+        self.tester.send(None)
 
     def runcode(self, code):
         '''Catch the interaction between the student and Python.
@@ -36,13 +50,13 @@ class TestConsole(code.InteractiveConsole):
         This overrides the parent class's runcode method, which is called to
         run a completed (possibly multi-line) block of code.  This method
         captures the code input (from self.buffer) and the stdout/stderr output
-        from running the code, and dispatches to the test_ methods to give
-        feedback.
+        from running the code, and dispatches to a tester coroutine to do the
+        actual testing.
 
         Note, if the student's code has a syntax error, the parent class does
         not get as far as calling runcode.
         '''
-        self.test_input(self.buffer)
+        inbuf = self.buffer
         outbuf = io.StringIO()
         errbuf = io.StringIO()
         with contextlib.redirect_stdout(outbuf):
@@ -50,7 +64,10 @@ class TestConsole(code.InteractiveConsole):
                 super(TestConsole, self).runcode(code)
         print(errbuf.getvalue(), end='', file=sys.stderr)
         print(outbuf.getvalue(), end='', file=sys.stdout)
-        self.test_output(outbuf.getvalue(), errbuf.getvalue())
+        fancyprint(self.tester.send((inbuf,
+                                     outbuf.getvalue(),
+                                     errbuf.getvalue(),
+                                     self.locals)))
 
 
 if __name__ == '__main__':
