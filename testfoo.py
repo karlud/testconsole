@@ -2,7 +2,7 @@
 #
 # Trivial example of an enhanced REPL that provides feedback.
 
-import code, io, contextlib, readline
+import code, io, contextlib, readline, sys
 
 try:
     # If termcolor is available, we can display feedback highlighted.
@@ -20,7 +20,7 @@ class TestConsole(code.InteractiveConsole):
       if lines[0].startswith('def '):
           fancyprint('You just defined a function!')
 
-  def test_output(self, output):
+  def test_output(self, output, error):
       # When the student gets Python to print the magic number, give feedback.
       if output.startswith("17"):
           fancyprint("*** YOU WIN A THE INTERNET ***")
@@ -30,15 +30,21 @@ class TestConsole(code.InteractiveConsole):
       
       This overrides the parent class's runcode method, which is called to run a
       completed (possibly multi-line) block of code.  This method captures the
-      code input (from self.buffer) and the stdio output from running the code,
-      and dispatches to the test_ methods to give feedback.
+      code input (from self.buffer) and the stdout/stderr output from running
+      the code, and dispatches to the test_ methods to give feedback.
+
+      Note, if the student's code has a syntax error, the parent class does not
+      get as far as calling runcode.
       '''
       self.test_input(self.buffer)
-      buf = io.StringIO()
-      with contextlib.redirect_stdout(buf):
-          super(TestConsole, self).runcode(code)
-      print(buf.getvalue())
-      self.test_output(buf.getvalue())
+      outbuf = io.StringIO()
+      errbuf = io.StringIO()
+      with contextlib.redirect_stdout(outbuf):
+          with contextlib.redirect_stderr(errbuf):
+              super(TestConsole, self).runcode(code)
+      print(errbuf.getvalue(), end='', file=sys.stderr)
+      print(outbuf.getvalue(), end='', file=sys.stdout)
+      self.test_output(outbuf.getvalue(), errbuf.getvalue())
 
 
 if __name__ == '__main__':
