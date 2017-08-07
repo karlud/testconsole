@@ -35,6 +35,7 @@ class TestConsole(code.InteractiveConsole):
       '''
       self.test_input(self.buffer)
       buf = io.StringIO()
+      # BUG: Doesn't catch stderr (Python 3.5 or later can!)
       with contextlib.redirect_stdout(buf):
           super(TestConsole, self).runcode(code)
       print(buf.getvalue())
