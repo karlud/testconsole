@@ -40,9 +40,9 @@ def TrivialTester():
 
 
 class TestConsole(code.InteractiveConsole):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, tester, *args, **kwargs):
         super(TestConsole, self).__init__(*args, **kwargs)
-        self.tester = TrivialTester()
+        self.tester = tester
         self.tester.send(None)
 
     def runcode(self, code):
@@ -61,16 +61,14 @@ class TestConsole(code.InteractiveConsole):
         outbuf = io.StringIO()
         errbuf = io.StringIO()
         with contextlib.redirect_stdout(outbuf):
-            with contextlib.redirect_stderr(errbuf):
-                super(TestConsole, self).runcode(code)
-        print(errbuf.getvalue(), end='', file=sys.stderr)
+            super(TestConsole, self).runcode(code)
         print(outbuf.getvalue(), end='', file=sys.stdout)
         fancyprint(self.tester.send((inbuf,
                                      outbuf.getvalue(),
-                                     errbuf.getvalue(),
+                                     '',
                                      self.locals)))
 
 
 if __name__ == '__main__':
-    t = TestConsole()
+    t = TestConsole(TrivialTester())
     t.interact()
