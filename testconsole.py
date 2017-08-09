@@ -16,6 +16,7 @@ try:
     def fancyprint(s):
         termcolor.cprint(s, attrs=['reverse'])
 except ImportError:
+    print('Warning, no termcolor module - feedback will not be reverse video')
     # If not, we'll just print the feedback normally.
     fancyprint = print
 
