@@ -20,6 +20,18 @@ except ImportError:
     fancyprint = print
 
 
+# Workaround for Python 3.4 and earlier that lack redirect_stderr.
+if 'redirect_stderr' not in dir(contextlib):
+    print('Warning, no stderr redirection - upgrade to 2016 Python!')
+    @contextlib.contextmanager
+    def dummy(_):
+        try:
+            yield sys.stderr
+        finally:
+            pass
+    contextlib.redirect_stderr = dummy
+
+
 # A Tester is a coroutine that accepts (in, out, err, locals) tuples and yields
 # messages to the student.  An (in, out, err, locals) tuple consists of the
 # student's typed input, the interpreter's stdout, the interpreter's stderr,
