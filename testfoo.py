@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
 # Trivial example of an enhanced REPL that provides feedback.
+# Currently this is pretty silly.
 
 import code
 import io
