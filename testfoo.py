@@ -39,9 +39,9 @@ def TrivialTester():
 
 
 class TestConsole(code.InteractiveConsole):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, tester, *args, **kwargs):
         super(TestConsole, self).__init__(*args, **kwargs)
-        self.tester = TrivialTester()
+        self.tester = tester
         self.tester.send(None)
 
     def runcode(self, code):
@@ -69,5 +69,5 @@ class TestConsole(code.InteractiveConsole):
 
 
 if __name__ == '__main__':
-    t = TestConsole()
+    t = TestConsole(TrivialTester())
     t.interact()
