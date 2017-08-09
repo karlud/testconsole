@@ -61,11 +61,13 @@ class TestConsole(code.InteractiveConsole):
         outbuf = io.StringIO()
         errbuf = io.StringIO()
         with contextlib.redirect_stdout(outbuf):
-            super(TestConsole, self).runcode(code)
+            with contextlib.redirect_stderr(errbuf):
+                super(TestConsole, self).runcode(code)
+        print(errbuf.getvalue(), end='', file=sys.stderr)
         print(outbuf.getvalue(), end='', file=sys.stdout)
         fancyprint(self.tester.send((inbuf,
                                      outbuf.getvalue(),
-                                     '',
+                                     errbuf.getvalue(),
                                      self.locals)))
 
 
