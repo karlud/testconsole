@@ -22,13 +22,10 @@ except ImportError:
 
 # Workaround for Python 3.4 and earlier that lack redirect_stderr.
 if 'redirect_stderr' not in dir(contextlib):
-    print('Warning, no stderr redirection - upgrade to 2016 Python!')
+    print('Warning, no stderr redirection - upgrade to 2016 Python!\n')
     @contextlib.contextmanager
     def dummy(_):
-        try:
-            yield sys.stderr
-        finally:
-            pass
+        yield sys.stderr
     contextlib.redirect_stderr = dummy
 
 
