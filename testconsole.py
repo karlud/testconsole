@@ -30,30 +30,43 @@ if 'redirect_stderr' not in dir(contextlib):
     contextlib.redirect_stderr = dummy
 
 
-# A Tester is a coroutine that accepts (in, out, err, locals) tuples and yields
-# messages to the student.  An (in, out, err, locals) tuple consists of the
-# student's typed input, the interpreter's stdout, the interpreter's stderr,
-# and the interpreter's locals dict.
-def TrivialTester():
-    (i, o, e, l) = yield 'Tester online!'
-    while True:
-        if e:
-            (i, o, e, l) = yield 'Something went a bit off there. Balloon plz?'
-        elif 'balloon' in i[0]:
-            if 'balloon' in l:
-                while True:
-                    (i, o, e, l) = yield 'Yay, I have a balloon!'
-            else:
-                (i, o, e, l) = yield 'No no, I want a balloon variable!'
+class StateEngine(object):
+    '''A StateEngine has many methods that consume data and produce tuples
+    of the form (output, newstate), where the newstate is another method.'''
+
+    def initial(self, *args, **kwargs):
+        return ('This state engine does nothing!', self.initial)
+
+    def __init__(self):
+        self.state = self.initial
+
+    def send(self, *args, **kwargs):
+        (output, newstate) = self.state(*args, **kwargs)
+        self.state = newstate
+        return output
+
+
+class BalloonStateEngine(StateEngine):
+    '''A StateEngine that wants you to define a balloon variable.'''
+    def initial(self, inp, out, err, loc):
+        if err:
+            return ('Something went wrong there. Balloon plz?', self.initial)
+        elif 'balloon' in loc:
+            return ('Yay, I have a balloon!', self.success)
+        elif 'balloon' in inp[0]:
+            return ('I want a variable _named_ balloon.', self.initial)
         else:
-            (i, o, e, l) = yield 'No balloon, please get me a balloon'
+            return ('I want a balloon.', self.initial)
+
+    def success(self, *args):
+        return ('You have passed this quiz! Go to the next page.',
+                self.success)
 
 
 class TestConsole(code.InteractiveConsole):
-    def __init__(self, tester, *args, **kwargs):
+    def __init__(self, engine, *args, **kwargs):
         super(TestConsole, self).__init__(*args, **kwargs)
-        self.tester = tester
-        self.tester.send(None)
+        self.engine = engine()
 
     def runcode(self, code):
         '''Catch the interaction between the student and Python.
@@ -75,12 +88,12 @@ class TestConsole(code.InteractiveConsole):
                 super(TestConsole, self).runcode(code)
         print(errbuf.getvalue(), end='', file=sys.stderr)
         print(outbuf.getvalue(), end='', file=sys.stdout)
-        fancyprint(self.tester.send((inbuf,
-                                     outbuf.getvalue(),
-                                     errbuf.getvalue(),
-                                     self.locals)))
+        fancyprint(self.engine.send(inbuf,
+                                    outbuf.getvalue(),
+                                    errbuf.getvalue(),
+                                    self.locals))
 
 
 if __name__ == '__main__':
-    t = TestConsole(TrivialTester())
+    t = TestConsole(BalloonStateEngine)
     t.interact()

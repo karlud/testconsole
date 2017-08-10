@@ -3,34 +3,44 @@
 import testconsole
 
 
-def SpiritAge():
-    (i, o, e, l) = yield 'Tester online!'
-    while 'age' not in l:
-        if '"age"' in i[0] or "'age'" in i[0]:
-            (i, o, e, l) = yield "Variable names don't need quotes."
-        else:
-            (i, o, e, l) = yield 'Define a variable called "age".'
-    (i, o, e, l) = yield 'You said you are {} years old.'.format(l['age'])
-
-    while '*' not in i[0]:
-        print(i)
-        (i, o, e, l) = yield 'Multiply age by the number of days in a year.'
-
-    while 'print' not in i[0]:
-        (i, o, e, l) = yield 'Make sure to print your result.'
-
-    while True:
+class SpiritAge(testconsole.StateEngine):
+    def initial(self, inp, out, err, loc):
+        if '"age"' in inp[0] or "'age'" in inp[0]:
+            return ("Variable names don't need quotes.", self.initial)
+        elif 'age' not in loc:
+            return ('Define a variable called "age".', self.initial)
+        
         try:
-            days = float(o)
-            break
+            years = float(loc['age'])
         except ValueError:
-            (i, o, e, l) = yield 'Make sure to print out only a single number.'
+            return ('The "age" variable needs a number for its value.',
+                    self.initial)
+        
+        # Student defined an age variable. Go to the next step!
+        return ("It's great to be {} years old. How many days is that?"
+                .format(loc['age']), self.days)
 
-    while True:
-        _ = yield ' *** You have passed this quiz! *** '
+    def days(self, inp, out, err, loc):
+        if '*' not in inp[0]:
+            return ('Multiply age by the number of days in a year.', self.days)
+
+        if 'print' not in inp[0]:
+            return ('Make sure to print the result.', self.days)
+
+        try:
+            days = float(out)
+        except ValueError:
+            return ('Make sure to print out only a single number.', self.days)
+
+        return ('It sounds like you are {} days old. Awesome!'.format(days),
+                self.success)
+
+    def success(self, *args, **kwargs):
+        return ('You have passed this quiz! Go to the next page.',
+                self.success)
 
 
 if __name__ == '__main__':
-    t = testconsole.TestConsole(SpiritAge())
+    t = testconsole.TestConsole(SpiritAge)
     t.interact()
 
