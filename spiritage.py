@@ -40,7 +40,7 @@ class SpiritAge(testconsole.QuizEngine):
 
     def printonly(self):
         try:
-            days = int(self.output)
+            days = float(self.output)
             self.message('It sounds like you are about {} days old. Awesome!'
                          .format(days))
             self.state = self.success
