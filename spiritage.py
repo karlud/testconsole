@@ -3,7 +3,7 @@
 import testconsole
 
 
-class SpiritAge(testconsole.StateEngine):
+class SpiritAge(testconsole.QuizEngine):
     '''This is a state engine that implements the Spirit Age quiz from cs101.'''
 
     def initial(self):
