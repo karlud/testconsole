@@ -1,7 +1,17 @@
 #!/usr/bin/env python3
 #
-# Trivial example of an enhanced REPL that provides feedback.
-# Currently this is pretty silly.
+# An enhanced Python REPL that can lead the student through an interactive
+# programming quiz.
+#
+# To define a quiz, you define a subclass of the QuizEngine class, including
+# a method called 'initial' and (potentially) some other methods.  Each of
+# these methods represents a _state_ that the quiz can be in; roughly, a step
+# that the student can be working on.  When the student completes a step,
+# the QuizEngine gets advanced to the next step (by altering self.state).
+#
+# See the BalloonQuizEngine for a worked example.
+#
+
 
 import code
 import io
@@ -30,49 +40,60 @@ if 'redirect_stderr' not in dir(contextlib):
     contextlib.redirect_stderr = dummy
 
 
-class StateEngine(object):
-    '''A StateEngine has many methods that consume data and return tuples
+class QuizEngine(object):
+    '''A QuizEngine has many methods that consume data and return tuples
     of the form (output, newstate), where the newstate is another method.
     
-    The StateEngine starts in the state called 'initial'.  Each state
-    function can consume four inputs (inp, out, err, loc) defined as
-    follows:
-        inp - the student's input (a list of strings)
-        out - the interpreter's standard output (a string)
-        err - the interpreter's standard error (a string)
-        loc - the intepreter's local variable dictionary
+    The QuizEngine starts in the state called 'initial'.  Each state is a
+    function that gets called to handle the student's latest input.  Each
+    state function has access to these member variables:
 
-    The return value from the state function should be a tuple containing
-    the message to the student, and the next state function.
+        self.inputs - a list of strings, the student's current input
+        self.output - a string, the interpreter's last write to standard output
+        self.error - a string, the interpreter's last write to standard error
+        self.locals - a dictionary, the interpreter's local variables
+
+    The state function is responsible for calling self.message() to display a
+    message to the student (if desired) and updating self.state to point to a
+    different state function (if the student has made progress).
+
+    To indicate the successful end of a quiz, change the state to self.success.
     '''
 
-    def initial(self, *args, **kwargs):
-        return ('This state engine does nothing!', self.initial)
+    def message(self, msg):
+        '''Display a message to the student.'''
+        fancyprint(msg)
 
-    def success(self, *args, **kwargs):
-        return ('You have passed this quiz! Go to the next page.',
-                self.success)
+    def initial(self):
+        self.message('This state engine does nothing!')
+        self.state = self.success
+
+    def success(self):
+        self.message('You have passed this quiz! Go to the next page.')
 
     def __init__(self):
         self.state = self.initial
 
-    def send(self, *args, **kwargs):
-        (output, newstate) = self.state(*args, **kwargs)
-        self.state = newstate
-        return output
+    def send(self, inputs, output, error, locals):
+        self.inputs = inputs
+        self.output = output
+        self.error = error
+        self.locals = locals
+        self.state()
 
 
-class BalloonStateEngine(StateEngine):
-    '''A StateEngine that wants you to define a balloon variable.'''
-    def initial(self, inp, out, err, loc):
-        if err:
-            return ('Something went wrong there. Balloon plz?', self.initial)
-        elif 'balloon' in loc:
-            return ('Yay, I have a balloon!', self.success)
-        elif 'balloon' in inp[0]:
-            return ('I want a variable _named_ balloon.', self.initial)
+class BalloonQuizEngine(QuizEngine):
+    '''A QuizEngine that wants the student to define a 'balloon' variable.'''
+    def initial(self):
+        if self.error:
+            self.message('Something went wrong there. Balloon plz?')
+        elif 'balloon' in self.locals:
+            self.message('Yay, I have a balloon!')
+            self.state = self.success
+        elif 'balloon' in self.inputs[0]:
+            self.message('I want a variable _named_ balloon.')
         else:
-            return ('I want a balloon.', self.initial)
+            self.message('I want a balloon')
 
 
 class TestConsole(code.InteractiveConsole):
@@ -100,12 +121,12 @@ class TestConsole(code.InteractiveConsole):
                 super(TestConsole, self).runcode(code)
         print(errbuf.getvalue(), end='', file=sys.stderr)
         print(outbuf.getvalue(), end='', file=sys.stdout)
-        fancyprint(self.engine.send(inbuf,
-                                    outbuf.getvalue(),
-                                    errbuf.getvalue(),
-                                    self.locals))
+        self.engine.send(inbuf,
+                         outbuf.getvalue(),
+                         errbuf.getvalue(),
+                         self.locals)
 
 
 if __name__ == '__main__':
-    t = TestConsole(BalloonStateEngine)
+    t = TestConsole(BalloonQuizEngine)
     t.interact()
