@@ -31,11 +31,27 @@ if 'redirect_stderr' not in dir(contextlib):
 
 
 class StateEngine(object):
-    '''A StateEngine has many methods that consume data and produce tuples
-    of the form (output, newstate), where the newstate is another method.'''
+    '''A StateEngine has many methods that consume data and return tuples
+    of the form (output, newstate), where the newstate is another method.
+    
+    The StateEngine starts in the state called 'initial'.  Each state
+    function can consume four inputs (inp, out, err, loc) defined as
+    follows:
+        inp - the student's input (a list of strings)
+        out - the interpreter's standard output (a string)
+        err - the interpreter's standard error (a string)
+        loc - the intepreter's local variable dictionary
+
+    The return value from the state function should be a tuple containing
+    the message to the student, and the next state function.
+    '''
 
     def initial(self, *args, **kwargs):
         return ('This state engine does nothing!', self.initial)
+
+    def success(self, *args, **kwargs):
+        return ('You have passed this quiz! Go to the next page.',
+                self.success)
 
     def __init__(self):
         self.state = self.initial
@@ -57,10 +73,6 @@ class BalloonStateEngine(StateEngine):
             return ('I want a variable _named_ balloon.', self.initial)
         else:
             return ('I want a balloon.', self.initial)
-
-    def success(self, *args):
-        return ('You have passed this quiz! Go to the next page.',
-                self.success)
 
 
 class TestConsole(code.InteractiveConsole):

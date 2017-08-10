@@ -4,6 +4,8 @@ import testconsole
 
 
 class SpiritAge(testconsole.StateEngine):
+    '''This is a state engine that implements the Spirit Age quiz from cs101.'''
+
     def initial(self, inp, out, err, loc):
         if '"age"' in inp[0] or "'age'" in inp[0]:
             return ("Variable names don't need quotes.", self.initial)
@@ -37,10 +39,6 @@ class SpiritAge(testconsole.StateEngine):
             return ('Make sure to print out only a single number.', self.days)
 
         return ('It sounds like you are {} days old. Awesome!'.format(days),
-                self.success)
-
-    def success(self, *args, **kwargs):
-        return ('You have passed this quiz! Go to the next page.',
                 self.success)
 
 
