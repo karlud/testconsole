@@ -24,6 +24,10 @@ class SpiritAge(testconsole.StateEngine):
         if '*' not in inp[0]:
             return ('Multiply age by the number of days in a year.', self.days)
 
+        if 'age' not in inp[0]:
+            return ('Make use of the "age" variable to multiply with.',
+                    self.days)
+
         if 'print' not in inp[0]:
             return ('Make sure to print the result.', self.days)
 
