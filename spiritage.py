@@ -11,10 +11,8 @@ class SpiritAge(testconsole.StateEngine):
             return ("Variable names don't need quotes.", self.initial)
         elif 'age' not in loc:
             return ('Define a variable called "age".', self.initial)
-        
-        try:
-            years = float(loc['age'])
-        except ValueError:
+      
+        if type(loc['age']) not in [int, float]:
             return ('The "age" variable needs a number for its value.',
                     self.initial)
         
