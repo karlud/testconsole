@@ -28,16 +28,24 @@ class SpiritAge(testconsole.QuizEngine):
             self.message('Multiply age by the number of days in a year.')
         elif 'age' not in firstline:
             self.message('Make use of the "age" variable to multiply with.')
+        elif '=' in firstline:
+            # Student is assigning a new variable.
+            self.message("Okay, you're doing a computation.  Now print it!")
+            self.state = self.printonly
         elif 'print' not in firstline:
             self.message('Make sure to print the result.')
         else:
-            try:
-                days = int(self.output)
-                self.message('It sounds like you are {} days old. Awesome!'
-                             .format(days))
-                self.state = self.success
-            except ValueError:
-                self.message('Make sure to print out only a single number.')
+            # Student is printing an expression.  Pass to the print checker.
+            self.printonly()
+
+    def printonly(self):
+        try:
+            days = int(self.output)
+            self.message('It sounds like you are about {} days old. Awesome!'
+                         .format(days))
+            self.state = self.success
+        except ValueError:
+            self.message('Make sure to print out only a single number.')
 
 
 if __name__ == '__main__':
